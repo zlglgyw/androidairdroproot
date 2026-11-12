@@ -27,9 +27,12 @@ cd androidairdroproot
 bash install.sh
 ```
 
-`install.sh` memasang Python dan Git, lalu menyalin
+`install.sh` memasang Python dan Git, menyalin `phone_server.py` dan
+`run_server.sh` ke home (`~/`), lalu menyalin
 `phone_config.json.example` ke `~/phone_config.json` (hanya kalau belum ada —
-konfigurasi yang sudah berisi token tidak pernah ditimpa).
+konfigurasi yang sudah berisi token tidak pernah ditimpa). Kalau
+`~/phone_server.py` sudah ada, file lamanya dibackup dulu ke
+`~/phone_server.py.bak`.
 
 Lalu edit `~/phone_config.json` dan isi nilai aslinya:
 

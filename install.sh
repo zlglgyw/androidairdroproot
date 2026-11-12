@@ -21,6 +21,20 @@ else
   echo "  Aktifkan dengan: pkg install -y tesseract"
 fi
 
+# File server: salin ke home. Clone membuat folder sendiri
+# (~/androidairdroproot), sementara server dijalankan dari
+# ~/phone_server.py — jadi salin ke home di sini.
+REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
+if [ "$REPO_DIR" != "$HOME" ]; then
+  if [ -f "$HOME/phone_server.py" ]; then
+    cp "$HOME/phone_server.py" "$HOME/phone_server.py.bak"
+    echo "phone_server.py lama dibackup ke phone_server.py.bak."
+  fi
+  cp "$REPO_DIR/phone_server.py" "$HOME/phone_server.py"
+  cp "$REPO_DIR/run_server.sh" "$HOME/run_server.sh"
+  echo "phone_server.py + run_server.sh disalin ke home."
+fi
+
 # Konfigurasi: salin contoh HANYA kalau belum ada — jangan pernah timpa
 # konfigurasi yang sudah berisi token asli.
 if [ -f "$HOME/phone_config.json" ]; then
