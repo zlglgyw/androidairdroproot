@@ -10,9 +10,10 @@ BARU di v3 (terinspirasi proyek Artemis — google/artemis):
   di /health, /ocr (Tesseract), rekam layar (/record/start,
   /record/stop, /recording), /trace dan /logcat.
   Perbaikan 12 Nov 2026: run() memakai shlex.join (karakter khusus
-  di /type tidak lagi rusak); /stop_app diverifikasi lewat pidof
-  karena `am` di XOS selalu mengembalikan error Binder meski
-  aplikasinya benar-benar berhenti.
+  di /type tidak lagi rusak); /stop_app: `am force-stop` di XOS
+  selalu gagal Binder, jadi fallback bunuh proses lewat SIGKILL
+  dan verifikasi selalu lewat pidof sebagai root (pidof tanpa
+  root buta terhadap proses aplikasi lain).
 
 KONFIGURASI TERPISAH (supaya update server tidak menghapus token):
   Buat file ~/phone_config.json sekali saja, isinya contoh:
@@ -281,17 +282,25 @@ def do_action(step):
         if ALLOWED_PACKAGES and pkg not in ALLOWED_PACKAGES:
             return False, "blocked_not_allowed_package"
         # `am force-stop` di beberapa ROM (mis. XOS Infinix) selalu
-        # mengembalikan error Binder "Failed transaction" meski
-        # aplikasinya benar-benar berhenti — dan berhentinya butuh
-        # beberapa detik. Jadi jangan percaya exit code; tunggu dan
-        # verifikasi lewat pidof (kosong = sudah berhenti).
+        # gagal dengan error Binder "Failed transaction" — operasi
+        # tidak pernah sampai ke system_server. Coba dulu cara resmi,
+        # kalau tidak mempan bunuh prosesnya langsung dengan SIGKILL
+        # (tanpa Binder, lewat root). Verifikasi selalu lewat pidof
+        # sebagai root: pidof tanpa root buta terhadap proses
+        # aplikasi lain (hidepid) dan selalu mengembalikan kosong.
         run(["am", "force-stop", pkg])
-        for _ in range(20):
+        for _ in range(6):
             time.sleep(0.5)
             _, out, _ = run(["pidof", pkg])
             if not out.strip():
                 return True, "stop_app"
-        return False, "stop_app"
+        _, out, _ = run(["pidof", pkg])
+        for pid in out.split():
+            if pid.isdigit():
+                run(["kill", "-9", pid])
+        time.sleep(0.5)
+        _, out, _ = run(["pidof", pkg])
+        return (not out.strip()), "stop_app"
     if kind == "wait":
         time.sleep(float(step.get("seconds", 1)))
         return True, "wait"
