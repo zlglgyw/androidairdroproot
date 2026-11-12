@@ -9,6 +9,10 @@ BARU di v3 (terinspirasi proyek Artemis — google/artemis):
   /type dengan clear/enter, /stop_app, current_package + screen_on
   di /health, /ocr (Tesseract), rekam layar (/record/start,
   /record/stop, /recording), /trace dan /logcat.
+  Perbaikan 12 Nov 2026: run() memakai shlex.join (karakter khusus
+  di /type tidak lagi rusak); /stop_app diverifikasi lewat pidof
+  karena `am` di XOS selalu mengembalikan error Binder meski
+  aplikasinya benar-benar berhenti.
 
 KONFIGURASI TERPISAH (supaya update server tidak menghapus token):
   Buat file ~/phone_config.json sekali saja, isinya contoh:
@@ -33,6 +37,7 @@ import base64
 import json
 import os
 import re
+import shlex
 import subprocess
 import threading
 import time
@@ -94,7 +99,9 @@ def log(action, result):
         pass
 
 def run(args):
-    cmd = " ".join(str(a) for a in args)
+    # shlex.join: argumen dengan karakter khusus (tanda kutip, ;, $)
+    # dikutip dengan benar supaya tidak dirusak shell `su -c`.
+    cmd = shlex.join(str(a) for a in args)
     r = subprocess.run(["su", "-c", cmd], capture_output=True, timeout=30)
     return r.returncode == 0, r.stdout.decode(errors="ignore"), r.stderr.decode(errors="ignore")
 
@@ -273,7 +280,14 @@ def do_action(step):
         pkg = str(step["package"])
         if ALLOWED_PACKAGES and pkg not in ALLOWED_PACKAGES:
             return False, "blocked_not_allowed_package"
-        return run(["am", "force-stop", pkg])[0], "stop_app"
+        # `am force-stop` di beberapa ROM (mis. XOS Infinix) selalu
+        # mengembalikan error Binder "Failed transaction" meski
+        # aplikasinya benar-benar berhenti. Jadi jangan percaya exit
+        # code — verifikasi lewat pidof (kosong = sudah berhenti).
+        run(["am", "force-stop", pkg])
+        time.sleep(0.5)
+        _, out, _ = run(["pidof", pkg])
+        return (not out.strip()), "stop_app"
     if kind == "wait":
         time.sleep(float(step.get("seconds", 1)))
         return True, "wait"
