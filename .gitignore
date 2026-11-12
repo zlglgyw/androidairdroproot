@@ -1,0 +1,4 @@
+phone_config.json
+*.log
+macros/
+__pycache__/

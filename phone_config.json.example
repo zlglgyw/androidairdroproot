@@ -1,0 +1,8 @@
+{
+    "_catatan": "Salin file ini ke ~/phone_config.json lalu isi nilai aslinya. File ini HANYA contoh \u2014 jangan pernah menulis token/IP asli di sini. Penjelasan tiap field: token = token acak min. 20 karakter untuk header X-Token; host = IP Tailscale HP ini (server HANYA bind ke alamat ini); port = port HTTP server; allowed_packages = daftar paket yang boleh di-launch/dihentikan (kosong = semua paket boleh); idle_timeout_minutes = server berhenti sendiri kalau tidak ada permintaan selama ini.",
+    "allowed_packages": [],
+    "host": "GANTI-DENGAN-IP-TAILSCALE-HP",
+    "idle_timeout_minutes": 30,
+    "port": 8765,
+    "token": "GANTI-DENGAN-TOKEN-ACAK-PANJANG-MIN-20-KARAKTER"
+}
