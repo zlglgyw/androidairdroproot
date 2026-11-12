@@ -282,12 +282,16 @@ def do_action(step):
             return False, "blocked_not_allowed_package"
         # `am force-stop` di beberapa ROM (mis. XOS Infinix) selalu
         # mengembalikan error Binder "Failed transaction" meski
-        # aplikasinya benar-benar berhenti. Jadi jangan percaya exit
-        # code — verifikasi lewat pidof (kosong = sudah berhenti).
+        # aplikasinya benar-benar berhenti — dan berhentinya butuh
+        # beberapa detik. Jadi jangan percaya exit code; tunggu dan
+        # verifikasi lewat pidof (kosong = sudah berhenti).
         run(["am", "force-stop", pkg])
-        time.sleep(0.5)
-        _, out, _ = run(["pidof", pkg])
-        return (not out.strip()), "stop_app"
+        for _ in range(20):
+            time.sleep(0.5)
+            _, out, _ = run(["pidof", pkg])
+            if not out.strip():
+                return True, "stop_app"
+        return False, "stop_app"
     if kind == "wait":
         time.sleep(float(step.get("seconds", 1)))
         return True, "wait"
