@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Konfigurasi AccessibilityService getgua client.
+     Diaktifkan Pak sekali saja di Pengaturan > Aksesibilitas.
+     Tanpa ini, aplikasi tetap jalan tapi semua klik memakai
+     jalur fallback (koordinat via root) seperti phone_server. -->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/accessibility_service_description"
+    android:accessibilityEventTypes="typeAllMask"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagDefault|flagReportViewIds|flagRetrieveInteractiveWindows"
+    android:canRetrieveWindowContent="true"
+    android:canPerformGestures="true"
+    android:notificationTimeout="100"
+    android:settingsActivity="com.getgua.client.MainActivity" />
