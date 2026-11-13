@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- UI setup minimal: status + tombol sekali jalan.
+     Pemakaian sehari-hari lewat HTTP, bukan lewat UI ini. -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="getgua client"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Server kendali HP — port 8766 (Tailscale, token-auth)" />
+
+        <TextView
+            android:id="@+id/tvService"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Service: …" />
+
+        <TextView
+            android:id="@+id/tvToken"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Token: …" />
+
+        <TextView
+            android:id="@+id/tvRoot"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Root: …" />
+
+        <TextView
+            android:id="@+id/tvA11y"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Aksesibilitas: …" />
+
+        <TextView
+            android:id="@+id/tvBattery"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Baterai: …" />
+
+        <Button
+            android:id="@+id/btnStart"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Mulai service" />
+
+        <Button
+            android:id="@+id/btnStop"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Berhentikan service" />
+
+        <Button
+            android:id="@+id/btnA11y"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Buka pengaturan Aksesibilitas" />
+
+        <Button
+            android:id="@+id/btnBattery"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Bebaskan dari battery optimization" />
+
+        <Button
+            android:id="@+id/btnRefresh"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Perbarui status" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Langkah sekali saja sesudah install: (1) tekan Mulai service, izinkan root saat diminta; (2) aktifkan getgua client di Aksesibilitas; (3) bebaskan dari battery optimization; (4) izinkan autostart bila XOS menanyakannya." />
+
+    </LinearLayout>
+
+</ScrollView>
