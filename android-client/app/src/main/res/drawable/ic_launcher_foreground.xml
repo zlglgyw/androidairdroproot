@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ikon target: cincin + titik tengah (metafora "klik tepat sasaran"). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="6"
+        android:pathData="M14,54 a40,40 0 1,0 80,0 a40,40 0 1,0 -80,0" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M42,54 a12,12 0 1,0 24,0 a12,12 0 1,0 -24,0" />
+</vector>
