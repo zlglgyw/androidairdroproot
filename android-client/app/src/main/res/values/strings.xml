@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">getgua client</string>
+    <string name="accessibility_service_description">Layanan kendali getgua client: memungkinkan agen otomatisasi milik pemilik HP mengetuk tombol dan membaca layar secara akurat (klik elemen langsung, bukan tebak koordinat). Hanya aktif bila pemilik mengizinkan.</string>
+    <string name="notif_channel_name">getgua client</string>
+    <string name="notif_channel_desc">Server kendali HP getgua client sedang berjalan.</string>
+    <string name="notif_title">getgua client aktif</string>
+    <string name="notif_text">Server kendali HP berjalan di port 8766</string>
+</resources>
