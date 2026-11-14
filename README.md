@@ -68,7 +68,7 @@ Aksi tunggal (`POST`, body JSON):
 | `/tap_resource` | `{"resource": "..."}` | Ketuk elemen berdasarkan resource-id. |
 | `/swipe` | `{"x1","y1","x2","y2"}` | Geser dari satu titik ke titik lain. |
 | `/scroll` | `{"direction": "up"\|"down"\|"left"\|"right"}` | **Baru di v3.** Scroll arah dengan jarak terukur (titik tengah 60% lebar layar, 70% ke 30% dalam ~800ms). |
-| `/long_press` | `{"x": int, "y": int}` | Ketuk dan tahan (~1 detik). |
+| `/long_press` | `{"x": int, "y": int, "duration": int (ms, default 1000, maks 30000)}` | Ketuk dan tahan (durasi bisa diatur). |
 | `/double_tap` | `{"x": int, "y": int}` | Ketuk dua kali. |
 | `/type` | `{"text": "...", "clear": bool, "enter": bool}` | Ketik teks. **Baru di v3:** `clear=true` menghapus isi kolom dulu (Move End + 50x Delete), `enter=true` menekan Enter sesudah mengetik. |
 | `/key` | `{"key": int}` | Tekan tombol (keyevent Android, mis. 3 Home, 4 Back, 66 Enter). |
