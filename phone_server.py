@@ -69,7 +69,7 @@ TOKEN = CFG["token"]
 HOST = CFG["host"]
 PORT = int(CFG["port"])
 ALLOWED_PACKAGES = set(CFG.get("allowed_packages") or [])
-IDLE_TIMEOUT = int(CFG.get("idle_timeout_minutes") or 30) * 60
+IDLE_TIMEOUT = int(CFG.get("idle_timeout_minutes", 30)) * 60
 
 # Kata yang menandakan aksi berisiko. Ketukan ke tombol dengan kata
 # ini DITOLAK server, kecuali permintaan secara eksplisit membawa
