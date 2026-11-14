@@ -252,8 +252,10 @@ def do_action(step):
         return run(["input", "swipe", str(coords[0]), str(coords[1]),
                     str(coords[2]), str(coords[3]), "800"])[0], "scroll"
     if kind == "long_press":
+        dur = int(step.get("duration", 1000))
+        dur = max(100, min(dur, 30000))
         return run(["input", "swipe", str(step["x"]), str(step["y"]),
-                    str(step["x"]), str(step["y"]), "1000"])[0], "long_press"
+                    str(step["x"]), str(step["y"]), str(dur)])[0], "long_press"
     if kind == "double_tap":
         ok1, _, _ = run(["input", "tap", str(step["x"]), str(step["y"])])
         time.sleep(0.2)
