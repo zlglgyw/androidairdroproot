@@ -6,7 +6,9 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.Button
+import android.widget.EditText
 import android.widget.TextView
+import android.widget.Toast
 import kotlin.concurrent.thread
 
 /**
@@ -20,18 +22,21 @@ class MainActivity : Activity() {
     private lateinit var tvRoot: TextView
     private lateinit var tvA11y: TextView
     private lateinit var tvBattery: TextView
+    private lateinit var etToken: EditText
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         AppLog.init(this)
         Automation.init(this)
+        TokenStore.init(this)
 
         tvService = findViewById(R.id.tvService)
         tvToken = findViewById(R.id.tvToken)
         tvRoot = findViewById(R.id.tvRoot)
         tvA11y = findViewById(R.id.tvA11y)
         tvBattery = findViewById(R.id.tvBattery)
+        etToken = findViewById(R.id.etToken)
 
         findViewById<Button>(R.id.btnStart).setOnClickListener {
             startForegroundService(Intent(this, ClientService::class.java))
@@ -56,6 +61,38 @@ class MainActivity : Activity() {
             }
         }
         findViewById<Button>(R.id.btnRefresh).setOnClickListener { refreshStatus() }
+        findViewById<Button>(R.id.btnSaveToken).setOnClickListener {
+            val t = etToken.text.toString().trim()
+            if (t.length < 20) {
+                Toast.makeText(this, "Token terlalu pendek (min 20 karakter)", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            thread(isDaemon = true) {
+                val ok = TokenStore.saveManualToken(t)
+                runOnUiThread {
+                    if (ok) {
+                        etToken.setText("")
+                        Toast.makeText(this, "Token manual tersimpan", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(this, "Gagal menyimpan token", Toast.LENGTH_SHORT).show()
+                    }
+                    refreshStatus()
+                }
+            }
+        }
+        findViewById<Button>(R.id.btnClearToken).setOnClickListener {
+            thread(isDaemon = true) {
+                val ok = TokenStore.clearManualToken()
+                runOnUiThread {
+                    Toast.makeText(
+                        this,
+                        if (ok) "Token manual dihapus — kembali ke file Termux" else "Gagal menghapus token",
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                    refreshStatus()
+                }
+            }
+        }
     }
 
     override fun onResume() {
@@ -70,12 +107,16 @@ class MainActivity : Activity() {
         tvBattery.text = "Baterai: " + (DeviceInfo.batteryLevel(this)?.let { "$it%" } ?: "…")
         tvToken.text = "Token: memeriksa…"
         tvRoot.text = "Root: memeriksa…"
-        // Cek token + root di thread latar (keduanya memanggil `su`).
+        // Cek token + root di thread latar (keduanya bisa memanggil `su`).
         thread(isDaemon = true) {
-            val tokenOk = TokenStore.isConfigured()
+            val source = TokenStore.tokenSource()
             val rootOk = RootShell.isRootAvailable()
             runOnUiThread {
-                tvToken.text = "Token: " + if (tokenOk) "terbaca dari phone_config.json" else "TIDAK TERBACA — cek Termux/phone_config.json"
+                tvToken.text = "Token: " + when (source) {
+                    TokenStore.SOURCE_MANUAL -> "TERBACA (manual — input aplikasi)"
+                    TokenStore.SOURCE_FILE -> "TERBACA (file Termux)"
+                    else -> "TIDAK TERBACA — masukkan token manual di bawah"
+                }
                 tvRoot.text = "Root: " + if (rootOk) "tersedia (uid=0)" else "TIDAK TERSEDIA — izinkan root saat prompt muncul"
             }
         }
