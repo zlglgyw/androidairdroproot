@@ -55,6 +55,33 @@
             android:layout_height="wrap_content"
             android:text="Baterai: …" />
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Token manual (dipakai bila pembacaan file Termux gagal):"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/etToken"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Tempel token di sini"
+            android:inputType="textPassword"
+            android:importantForAutofill="no" />
+
+        <Button
+            android:id="@+id/btnSaveToken"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Simpan token manual" />
+
+        <Button
+            android:id="@+id/btnClearToken"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Hapus token manual" />
+
         <Button
             android:id="@+id/btnStart"
             android:layout_width="match_parent"
@@ -90,7 +117,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Langkah sekali saja sesudah install: (1) tekan Mulai service, izinkan root saat diminta; (2) aktifkan getgua client di Aksesibilitas; (3) bebaskan dari battery optimization; (4) izinkan autostart bila XOS menanyakannya." />
+            android:text="Langkah sekali saja sesudah install: (1) tekan Mulai service, izinkan root saat diminta; (2) aktifkan getgua client di Aksesibilitas; (3) bebaskan dari battery optimization; (4) izinkan autostart bila XOS menanyakannya; (5) bila Token TIDAK TERBACA, tempel token di kolom Token manual lalu Simpan." />
 
     </LinearLayout>
 
