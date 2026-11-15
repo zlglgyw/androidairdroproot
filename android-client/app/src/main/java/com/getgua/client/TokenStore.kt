@@ -1,35 +1,124 @@
 package com.getgua.client
 
+import android.content.Context
 import android.os.SystemClock
 import org.json.JSONObject
 
 /**
  * Token auth HTTP (header X-Token).
  *
- * Token TIDAK PERNAH hardcode di aplikasi dan TIDAK PERNAH ditulis
- * ke file aplikasi sendiri — nilainya dibaca dari file config yang
- * sama dengan phone_server (`~/phone_config.json` di Termux) lewat
- * root. Dengan begitu satu token berlaku untuk kedua server, dan
- * repo publik ini tetap bersih dari secret.
+ * Dua sumber token, sesuai urutan prioritas:
+ * 1. Token MANUAL — diketik di UI aplikasi, disimpan di SharedPreferences
+ *    privat aplikasi (MODE_PRIVATE, hanya aplikasi ini yang bisa baca).
+ *    Ini jalan utama sejak v1.0.1: pembacaan file Termux dari UID
+ *    aplikasi ternyata gagal di HP ini (15 Nov 2026 — baca file yang
+ *    sama lewat shell Termux justru berhasil penuh, jadi masalahnya
+ *    ada di sisi aplikasi, bukan di file/SELinux).
+ * 2. File config Termux (`~/phone_config.json`) lewat root — fallback,
+ *    dipertahankan supaya token tetap satu dengan phone_server bila
+ *    pembacaan file bekerja.
  *
- * Nilai token di-cache 60 detik supaya tiap permintaan HTTP tidak
- * perlu memanggil `su` lagi.
+ * Token TIDAK PERNAH hardcode di aplikasi dan TIDAK PERNAH ditulis ke
+ * repo (repo ini publik). Nilai token tidak pernah ditulis ke log —
+ * log hanya mencatat status baca (ok/kode/error).
+ *
+ * Token file di-cache 60 detik supaya tiap permintaan HTTP tidak perlu
+ * memanggil `su` lagi; token manual dibaca dari SharedPreferences
+ * (sudah di-cache di memori oleh framework, jadi murah).
  */
 object TokenStore {
 
     private const val CONFIG_PATH = "/data/data/com.termux/files/home/phone_config.json"
+    private const val PREFS_NAME = "getgua_prefs"
+    private const val KEY_MANUAL_TOKEN = "manual_token"
     private const val TTL_MS = 60_000L
 
+    /** Sumber token terakhir yang berhasil dipakai. */
+    const val SOURCE_MANUAL = "manual"
+    const val SOURCE_FILE = "file"
+
+    @Volatile private var appContext: Context? = null
     @Volatile private var cachedToken: String? = null
+    @Volatile private var cachedSource: String? = null
     @Volatile private var cachedPackages: Set<String> = emptySet()
     @Volatile private var loadedAt: Long = 0L
 
-    /** Token saat ini (null bila config tidak terbaca / token kosong). */
+    /** Wajib dipanggil sekali (MainActivity / ClientService) sebelum getToken. */
+    fun init(context: Context) {
+        if (appContext == null) {
+            appContext = context.applicationContext
+        }
+    }
+
+    /** Token manual tersimpan (null bila belum pernah diisi). */
+    fun manualToken(): String? {
+        val ctx = appContext ?: return null
+        return try {
+            ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                .getString(KEY_MANUAL_TOKEN, null)?.trim()?.ifEmpty { null }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    fun manualTokenSet(): Boolean = manualToken() != null
+
+    /** Simpan token manual (dipakai UI). Menggantikan token file. */
+    @Synchronized
+    fun saveManualToken(token: String): Boolean {
+        val clean = token.trim()
+        if (clean.length < 20) return false
+        val ctx = appContext ?: return false
+        return try {
+            ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                .edit().putString(KEY_MANUAL_TOKEN, clean).apply()
+            cachedToken = clean
+            cachedSource = SOURCE_MANUAL
+            loadedAt = SystemClock.uptimeMillis()
+            AppLog.log("token", "manual token saved")
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    /** Hapus token manual — kembali ke pembacaan file Termux. */
+    @Synchronized
+    fun clearManualToken(): Boolean {
+        val ctx = appContext ?: return false
+        return try {
+            ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                .edit().remove(KEY_MANUAL_TOKEN).apply()
+            cachedToken = null
+            cachedSource = null
+            loadedAt = 0L
+            AppLog.log("token", "manual token cleared")
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    /** Token saat ini (null bila tidak ada sumber yang berhasil). */
     fun getToken(): String? {
-        if (cachedToken != null && SystemClock.uptimeMillis() - loadedAt < TTL_MS) {
+        // Token manual selalu menang — tanpa TTL (SharedPreferences murah).
+        manualToken()?.let {
+            cachedToken = it
+            cachedSource = SOURCE_MANUAL
+            return it
+        }
+        if (cachedToken != null && cachedSource == SOURCE_FILE &&
+            SystemClock.uptimeMillis() - loadedAt < TTL_MS
+        ) {
             return cachedToken
         }
         return reload()
+    }
+
+    /** Sumber token saat ini: "manual" / "file" / null. */
+    fun tokenSource(): String? {
+        if (manualToken() != null) return SOURCE_MANUAL
+        return if (getToken() != null) SOURCE_FILE else null
     }
 
     /** Daftar allowed_packages dari config (kosong = semua paket boleh). */
@@ -42,13 +131,25 @@ object TokenStore {
 
     @Synchronized
     fun reload(): String? {
+        manualToken()?.let {
+            cachedToken = it
+            cachedSource = SOURCE_MANUAL
+            loadedAt = SystemClock.uptimeMillis()
+            return it
+        }
         val r = try {
             RootShell.run(listOf("cat", CONFIG_PATH), 10)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            AppLog.log("token", "file read exception: ${(e.message ?: "").take(100)}")
             return null
         }
         if (!r.ok || r.stdout.isBlank()) {
+            AppLog.log(
+                "token",
+                "file read failed: ok=${r.ok} code=${r.code} err=${r.stderr.trim().take(100)}",
+            )
             cachedToken = null
+            cachedSource = null
             cachedPackages = emptySet()
             return null
         }
@@ -61,11 +162,17 @@ object TokenStore {
                 for (i in 0 until arr.length()) pkgs.add(arr.optString(i))
             }
             cachedToken = token.ifEmpty { null }
+            cachedSource = if (cachedToken != null) SOURCE_FILE else null
             cachedPackages = pkgs
             loadedAt = SystemClock.uptimeMillis()
             cachedToken
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            AppLog.log(
+                "token",
+                "file parse failed: ${(e.message ?: "").take(100)} (stdout ${r.stdout.length} chars)",
+            )
             cachedToken = null
+            cachedSource = null
             cachedPackages = emptySet()
             null
         }
@@ -77,6 +184,8 @@ object TokenStore {
      * membaca config saat start, jadi sesudah rotate, phone_server
      * (port 8765) tetap memakai token lama sampai di-restart — hanya
      * getgua client (port 8766) yang langsung memakai token baru.
+     * Bila token manual sedang dipakai, token manual ikut diperbarui
+     * supaya keduanya tetap sinkron.
      */
     @Synchronized
     fun rotate(newToken: String): Boolean {
@@ -96,8 +205,13 @@ object TokenStore {
             return false
         }
         if (!w.ok) return false
-        cachedToken = newToken
-        loadedAt = SystemClock.uptimeMillis()
+        if (manualToken() != null) {
+            saveManualToken(newToken)
+        } else {
+            cachedToken = newToken
+            cachedSource = SOURCE_FILE
+            loadedAt = SystemClock.uptimeMillis()
+        }
         return true
     }
 }
