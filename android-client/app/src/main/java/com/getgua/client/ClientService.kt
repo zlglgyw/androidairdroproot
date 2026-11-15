@@ -44,6 +44,7 @@ class ClientService : Service() {
         super.onCreate()
         AppLog.init(this)
         Automation.init(this)
+        TokenStore.init(this)
         TokenStore.reload()
     }
 
