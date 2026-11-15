@@ -31,9 +31,13 @@ Agen (cloud) --HTTPS/Tailscale--> getgua client :8766 (foreground service)
 - **HTTP server hand-rolled** (`HttpServer.kt`, tanpa dependensi):
   `ServerSocket` di `0.0.0.0:8766`, thread pool 4, satu koneksi satu
   permintaan. JSON memakai `org.json` bawaan framework.
-- **Token**: dibaca dari file config yang sama dengan phone_server
+- **Token**: dua sumber, sesuai prioritas — (1) **token manual** yang
+  diketik di UI aplikasi dan disimpan di SharedPreferences privat
+  aplikasi (jalan utama sejak v1.0.1, karena pembacaan file dari UID
+  aplikasi ternyata gagal di HP ini); (2) file config yang sama
+  dengan phone_server
   (`/data/data/com.termux/files/home/phone_config.json`) lewat root,
-  di-cache 60 detik. **Tidak ada token hardcode di aplikasi ini dan
+  sebagai fallback. **Tidak ada token hardcode di aplikasi ini dan
   tidak ada secret di repo** (repo ini publik).
 - **Log**: `getgua-client.log` di storage internal aplikasi (teks saja,
   tanpa token/screenshot), diputar otomatis di ~200 KB. Dibaca lewat
@@ -48,7 +52,7 @@ phone_server.
 
 | Endpoint | Metode | Keterangan |
 |---|---|---|
-| `/ping` | GET | `{"ok":true,"version":"1.0.0"}` |
+| `/ping` | GET | `{"ok":true,"version":"1.0.1"}` |
 | `/health` | GET | Baterai, uptime, current_package, screen_on, + `accessibility_active`, `root_available`, `token_configured` |
 | `/screenshot` | GET | JPEG default. Param: `quality` (default 70), `width` (perkecil lebar, opsional), `format=png` (bila perlu PNG) |
 | `/screen` | GET | JSON: screenshot base64 **JPEG** (`format:"jpeg"`) + nodes + `ui_source` + `captcha_detected` + ukuran layar |
