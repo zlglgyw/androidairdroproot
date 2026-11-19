@@ -42,17 +42,26 @@ object Screenshot {
         }
     }
 
-    /** Encode PNG menjadi JPEG. [maxWidth] opsional untuk memperkecil lebar. */
-    fun toJpeg(png: ByteArray, quality: Int, maxWidth: Int?): ByteArray? {
+    /**
+     * Encode PNG menjadi JPEG. [maxWidth] opsional untuk memperkecil
+     * lebar; [scale] 0.1-1.0 memperkecil proporsional (0.5 = setengah
+     * ukuran). Bila keduanya diisi, yang terkecil yang dipakai.
+     */
+    fun toJpeg(png: ByteArray, quality: Int, maxWidth: Int?, scale: Double = 1.0): ByteArray? {
         val bmp = try {
             BitmapFactory.decodeByteArray(png, 0, png.size)
         } catch (_: Exception) {
             null
         } ?: return null
         try {
-            val scaled = if (maxWidth != null && maxWidth > 0 && bmp.width > maxWidth) {
-                val h = (bmp.height * maxWidth) / bmp.width
-                Bitmap.createScaledBitmap(bmp, maxWidth, h, true)
+            val targetW = listOfNotNull(
+                maxWidth?.takeIf { it > 0 },
+                (bmp.width * scale.coerceIn(0.1, 1.0)).toInt()
+                    .takeIf { it > 0 && it < bmp.width },
+            ).minOrNull()
+            val scaled = if (targetW != null && targetW < bmp.width) {
+                val h = (bmp.height * targetW) / bmp.width
+                Bitmap.createScaledBitmap(bmp, targetW, h, true)
             } else {
                 bmp
             }
