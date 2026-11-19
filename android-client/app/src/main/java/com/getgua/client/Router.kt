@@ -21,7 +21,7 @@ import java.io.File
 class Router(private val context: Context) {
 
     companion object {
-        const val APP_VERSION = "1.0.1"
+        const val APP_VERSION = "1.0.2"
         const val REC_FILE = "/sdcard/phone_rec.mp4"
     }
 
@@ -85,9 +85,12 @@ class Router(private val context: Context) {
         return jsonOk(obj)
     }
 
+    // GET /screenshot?format=jpeg|png&quality=70&width=<px>&scale=1.0
+    // format default jpeg; scale 0.1-1.0 (0.5 = setengah ukuran).
     private fun screenshot(req: HttpServer.Request): HttpServer.Response {
         val quality = req.query["quality"]?.toIntOrNull() ?: 70
         val width = req.query["width"]?.toIntOrNull()
+        val scale = (req.query["scale"]?.toDoubleOrNull() ?: 1.0).coerceIn(0.1, 1.0)
         val format = (req.query["format"] ?: "jpeg").lowercase()
         val png = Screenshot.capturePng()
         if (png == null) {
@@ -98,9 +101,9 @@ class Router(private val context: Context) {
             AppLog.log("screenshot", "ok png ${png.size} bytes")
             return HttpServer.Response(200, "image/png", png)
         }
-        val jpeg = Screenshot.toJpeg(png, quality, width)
+        val jpeg = Screenshot.toJpeg(png, quality, width, scale)
             ?: return jsonErr(500, "jpeg encode failed")
-        AppLog.log("screenshot", "ok jpeg q$quality ${jpeg.size} bytes")
+        AppLog.log("screenshot", "ok jpeg q$quality s$scale ${jpeg.size} bytes")
         return HttpServer.Response(200, "image/jpeg", jpeg)
     }
 
